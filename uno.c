@@ -7,66 +7,60 @@
 #include <unistd.h>
 #include <string.h>
 #include "global.h"
-#include "wabc.h"
-#include "vm.h"
+#include "parse.h"
+#include "exec.h"
 
 static unsigned int mode;
 
-UFLAG MODE_compile(FILE *infile, FILE *outfile)
+UFLAG MODE_interpret(int argc, char **argv)
 {
-	vmdata commit = UNO_read(infile);
+	UnoMS *ums;
 
-	UNO_write(outfile, commit);
+	ums = Uno_init(ums);
 
-	fclose(infile);
-	fclose(outfile);
-	free(commit.inst);
-	free(commit.proc);
-	free(commit.pdata);
+	Wabc_init(ums);
 
-	return F_COMPILESUCCESS;
-}
+	Uno_parsemain(ums);
 
-UFLAG MODE_run(FILE *execfile, int offset, int argc, char **argv)
-{
-	vmdata vd;
-	vd = VM_read(execfile);
-	
-	STACK *beginstack;
+	VM_init(ums, 2, argc, argv);
 
-	beginstack = VM_init(offset, argc, argv);
-	
-	VM_exec(vd, beginstack);
+	VM_exec(ums);
 
-	fclose(execfile);
-	free(beginstack->values);
-	free(beginstack);
-	free(vd.inst);
-	free(vd.proc);
-	free(vd.pdata);
-
-	return F_EXECSUCCESS;
-}
-
-UFLAG MODE_interpret(FILE *infile, int argc, char **argv)
-{
-	vmdata vd;
-	vd = UNO_read(infile);
-
-	STACK *beginstack;
-
-	beginstack = VM_init(2, argc, argv);
-
-	VM_exec(vd, beginstack);
-
-	fclose(infile);
-	free(beginstack->values);
-	free(beginstack);
-	free(vd.inst);
-	free(vd.proc);
-	free(vd.pdata);
+	fclose(source);
+	Uno_exit(ums);
 
 	return F_EXECSUCCESS | F_COMPILESUCCESS;
+}
+
+UFLAG MODE_console(int optind, int argc, char **argv)
+{
+	UnoMS *ums;
+
+	Uno_init(ums);
+	Wabc_init(ums);
+	VM_init(ums, optind, argc, argv);
+
+	register int ip = 0;
+
+	printf(">>> ");
+
+	scanf("%s", TLINE->text);
+	
+	do
+	{
+		TLINE->len = strlen(TLINE->text);
+		LINE = Uno_parse(
+								LINE,  
+								VD, 
+								BSTACK, 
+								ip++);
+		VM_exec_op(VD, MSTACK, CSTACK, POINT, LINE);
+		printf("\n>>> ");
+	} 
+	while (scanf("%s", TLINE->text) > 0);
+
+
+	Uno_exit(U);
 }
 
 int main(int argc, char **argv)
@@ -78,71 +72,51 @@ int main(int argc, char **argv)
 
 	char *infile, *outfile;
 
-	c = getopt(argc, argv, "c:e:o:");
+
+#	define OPTSTR "i"
+	c = getopt(argc, argv, OPTSTR);
 
 	do
 	{
-
 		switch (c)
 		{
-			case 'c':
-				mode |= (MODE_COMPILE | MODE_WRITE);
-				infile = strdup(optarg);
+			case 'i':
+				mode = MODE_CONSOLE;
 				break;
-			case 'e':
-				mode |= MODE_EXECUTE;
-				infile = strdup(optarg);
-				break;
-			case 'o':
-				outfile = strdup(optarg);
-				break;
+			default:
+				mode = MODE_INTERP;
 		}
-	} while ((c = getopt(argc, argv, "c:e:o:")) != -1);
+	} while ((c = getopt(argc, argv, OPTSTR)) != -1);
 
-	if (mode == 0)
+	switch (mode)
 	{
-		mode = MODE_COMPILE | MODE_EXECUTE;
-		infile = argv[1];
+		case MODE_INTERP:
+			if ( !argv[1] )
+			{
+				fprintf(stderr, "No file supplied!\n");
+				exit(0);
+			}
 
-		if (infile == NULL)
-		{
-			fprintf(stderr, "UnoError: No filename supplied\n");
-			exit(0);
-		}
+			listing = stdout;
+
+			source = fopen(argv[1], "r");
+
+			if ( !source )
+				fprintf(stderr, "Couldn't open %s for reading\n", argv[1]);
+
+			MODE_interpret(argc, argv);
+
+			break;
+		case MODE_CONSOLE:
+			listing = stdout;
+			source = stdin;
+
+			MODE_console(optind, argc, argv);
+			break;
+		default:
+			fprintf(stderr, "Unrecognized mode %d\n", mode);
+			exit(1);
 	}
-
-	FILE *in, *out;
-
-	in = fopen(infile, "r");
-	if ( !in )
-	{
-		fprintf(stderr, "UnoError: Couldn't open %s for reading\n", argv[1]);
-		exit(0);
-	}
-	
-	if (mode != (MODE_COMPILE | MODE_EXECUTE))
-		free(infile);
-
-
-	if (mode & MODE_WRITE)
-	{
-		out = fopen(outfile, "w");
-
-		if ( !out )
-		{
-			fprintf(stderr, "UnoError: Couldn't open %s for writing\n", argv[2]);
-			exit(0);
-		}
-		
-		free(outfile);	
-	}
-
-	if (mode == (MODE_COMPILE | MODE_WRITE))
-		MODE_compile(in, out);
-	else if (mode == (MODE_COMPILE | MODE_EXECUTE))
-		MODE_interpret(in, argc, argv);
-	else if (mode == MODE_EXECUTE)
-		MODE_run(in, optind, argc, argv);
 
 	return 0;
 }

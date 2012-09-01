@@ -3,7 +3,7 @@
 #ifndef OPS_H
 #define OPS_H
 
-#define OP_COUNT 45
+#define OP_COUNT 47
 
 #define OP_START 0
 
@@ -25,6 +25,7 @@
 #define O_OUTC		(OP_START + 15)
 #define O_PEEK		(OP_START + 16)
 // #define O_JMP		(OP_START + 18) -- DEPRECATED
+/* unused */
 #define O_IFE		(OP_START + 17)
 #define O_IFN		(OP_START + 18)
 #define O_IFG		(OP_START + 19)
@@ -32,6 +33,7 @@
 #define O_IFL		(OP_START + 21)
 #define O_IFLE		(OP_START + 22)
 #define O_DEBUG		(OP_START + 23)
+/* end unused */
 /* internal */
 #define O_JMP		(OP_START + 24)
 #define O_JT		(OP_START + 25)
@@ -55,14 +57,16 @@
 #define O_SET		(OP_START + 42)
 #define O_NOP		(OP_START + 43)
 #define O_NEG		(OP_START + 44)
+#define O_INCAT		(OP_START + 45)
+#define O_DECAT		(OP_START + 46)
 
 #ifdef UNODEBUG
-static const char* OP_tostring[OP_COUNT] =
+static const char* op2string[OP_COUNT] =
 {
 	"routine",
 	"while",
 	"call",
-	".",
+	"end",
 	"push",
 	"leave",
 	"dup",
@@ -85,7 +89,7 @@ static const char* OP_tostring[OP_COUNT] =
 	"debug",
 	"jmp",
 	"jt",
-	"jf",
+	"if",
 	"eq",
 	"ne",
 	"lt",
@@ -104,6 +108,8 @@ static const char* OP_tostring[OP_COUNT] =
 	"set",
 	"nop",
 	"neg",
+	"incat",
+	"decat",
 };
 
 #endif /* UNODEBUG */

@@ -65,34 +65,36 @@ void stackpush(STACK *to, p_val src)
 {
 	if (src.type == TYPE_EMPTY)
 		return;
-	
-	/* Bounds check, grow if necessary */
-	if (to->p + 1 >= to->allocated)
-	{
-		fprintf(stderr, "UnoVM: Allocating...\n");
-
-
-		unsigned int new_alloc = (to->allocated + STACK_GROW);
-
-		to->values = realloc(to->values, 
-			new_alloc * sizeof(p_val));
-		
-		if ( !to->values )
-			fprintf(stderr, "VMError: Failure to grow stack\n");
-		
-		to->allocated = new_alloc;
-	}
 
 	to->p++;
 
 	to->values[to->p] = src;
 }
 
+void stackcheck(STACK *st)
+{
+	/* Bounds check, grow if necessary */
+	if (st->p + 1 >= st->allocated)
+	{
+		fprintf(stderr, "UnoVM: Allocating...\n");
+
+		unsigned int new_alloc = (st->allocated + STACK_GROW);
+
+		st->values = realloc(st->values, 
+			new_alloc * sizeof(p_val));
+		
+		if ( !st->values )
+			fprintf(stderr, "VMError: Failure to grow stack\n");
+		
+		st->allocated = new_alloc;
+	}
+}
+
 p_val stackpop(STACK *from)
 {
 	p_val ret;
 
-	if (from->p < 0)
+	if (from->p < -1)
 		print_error(1, "RuntimeError: attempt to go below stack boundary\n"); 
 	
 	ERRCHECK
@@ -267,12 +269,23 @@ UFLAG VM_exec(vmdata vd, STACK *thestack)
 	/* Main execution loop */
 	do
 	{
-#ifdef UNODEBUG
-		printf("Executing %s %d, ip = %d\n", 
-			OP_tostring[CUR_LINE.opcode], CUR_LINE.arg.v.ival, IP);
+
 		
-		getchar();
+#ifdef UNODEBUG
+		printf("Executing %s ", 
+			op2string[CUR_LINE.opcode]);
+		
+		if (CUR_LINE.arg.type == TYPE_IVAL)
+			printf(IVAL_PRINTFORMAT, CUR_LINE.arg.v.ival);
+		else
+			printf(DVAL_PRINTFORMAT, CUR_LINE.arg.v.dval);
+
+		printf("IP = %d\n", IP);
+		
+		//getchar();
 #endif
+
+
 		if (CUR_LINE.opcode == O_CALL)
 		{
 			routp = &vd.proc[CUR_LINE.arg.v.ival];

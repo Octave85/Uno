@@ -1,0 +1,11 @@
+Uno Project Stuff to do/improve List
+
+2/7/2012
+-- Alias addresses of all the main program components (from ums) in Uno_parsemain and
+VM_exec so that accesses are faster -- it's slower to go ums->stack->values than just
+stack->values. Maybe even alias the values address itself.
+-- Obstacks for memory management
+-- Cache first 2-4 values on the stack in regular variables.
+-- Maybe implement stack functions as macros?
+-- Change STACK_START to a larger value -- we're not too concerned with memory,
+only using about 5-6kB to start with anyway.

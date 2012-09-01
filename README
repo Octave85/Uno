@@ -1,0 +1,130 @@
+README for Uno
+Uno is a stack-based language that I made as a fun experiment thing.
+I lost Uno for about seven months when my netbook died but I recently recovered it, miraculously.
+(Among other things, saving it involved a bag of ice)
+Now I'm sad because I documented it insufficiently and I have to get reacquainted with it.
+
+I do know that Uno took some influence from Forth, in regards to keywords and stuff.
+
+Here are the reserved words and structures of Uno:
+
+--Numbers
+	Typing a number in an Uno program simply pushes that number on the stack. The integer is the only data type.
+
+--Subroutines
+	Typing a name followed by a colon defines a subroutine. Any code may go inside a subroutine (except other subroutines? I'm not sure; 
+	this is the problem with not documenting your code!) A subroutine is considered a block and ends with 'end'.
+
+--Subroutine Calls
+	Typing a subroutine name in (parentheses) calls it. The stack is untouched by subroutine calls.
+
+--Comparisons
+	The comparison operators are <, <=, =, >, >=, and !=. They all work like you would expect them to. Note that equality is a single equals sign - '='.
+	They all perform indicate the result of their comparison by pushing a 1 or 0 onto the stack.
+
+--If, While
+	Comparisons are generally used right before If or While constructs. Both If and While are ended by 'end'.
+	If takes off the first value on the stack. If it's 0, it skips the If block. 
+	While takes off the first value on the stack. If it's 0, it skips the block, if it's true, it continues.
+	In a while block, when the 'end' is reached, and the first value on the stack is still true, the block is repeated.
+	This means another comparison will have to be done right before the 'end' to see if the while condition is still true.
+
+Now we have stack operators.
+
+--Drop
+	Deletes the head of the stack.
+
+	e.g.:
+	stack: 0 2 1
+	code: drop
+	stack: 0 2
+
+--Dup
+	Duplicates the head of the stack, pushing it on.
+
+	e.g.:
+	stack: 0 2
+	code: dup
+	stack: 0 2 2
+
+--End
+	As explained before, demarcates blocks. Executional meaning is different for each kind of block.
+
+--Swap
+	Swaps the two values at the top of the stack.
+
+	e.g.:
+	stack: 3 4
+	code: swap
+	stack: 4 3
+
+--St
+	This operator provides read access to any member of the stack. I guess this makes the stack random-access. Some kind of pseudo-stack.
+	The stack is ordered in ascending order, so if you push three numbers, say 4, 3, and 7, 4 is at location 0, 3 at 1, and 7 at 2.
+	The st operator takes the value at the head of the stack and uses it as a stack index, pushing the value of the stack member at that location.
+
+	e.g.:
+	stack: 30 2 10
+	code: 1 st
+	stack: 30 2 10 2 <-- Value that was at stack index 1
+
+	This lets you keep track of individual values.
+
+--Assignment (:=)
+	The assignment operator lets you assign a value to any member of the stack. It's st's write-only companion.
+	st takes two numbers from the stack. The first is interpreted as the index to which it assigns. The second is the value to assign.
+
+	e.g.:
+	stack: 46 3 5
+	code: 1 9 :=
+	stack: 46 9 5
+
+--Die
+	Die ends the program where it is.
+
+--Leave
+	Leave returns from a block.
+
+--Rot
+	Rot, or rotate, rotates the top three values on the stack.
+	The third one is moved to the top, the top moves to the second position, and the second moves to the third position.
+
+	e.g.:
+	stack: 1 2 3
+	code: rot
+	stack: 2 3 1
+
+--incat, decat
+	Incat/decat, or increment/decrement at, are shortcut operators to increment or decrement the value at a certain index by 1.
+
+	e.g.:
+	stack: 0 5 6 3
+	code: 0 incat
+	stack: 1 5 6 3
+
+	Note that x incat is a shortcut for x x st 1 + := 
+
+--Over
+	Over pushes the second value on the stack, thus jumping it "over" the head value.
+
+	e.g.:
+	stack: 0 1
+	code: over
+	stack: 0 1 0
+
+--Out
+	Prints the value at the top of the stack literally.
+
+	e.g.:
+	stack: 2 47
+	code: out
+	output: 47
+	stack: 2
+
+--Outc
+	Prints the ASCII character represented by the number at the top of the stack.
+	e.g.:
+	stack: 2 10
+	code: outc
+	output: \n
+	stack: 2
